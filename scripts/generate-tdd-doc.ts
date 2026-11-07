@@ -168,7 +168,7 @@ async function createTddDocument() {
                 font: "Calibri",
               }),
             ],
-            spacing: { after: 120 },
+            spacing: { after: 140 },
           }),
 
           // 1. EXECUTIVE SUMMARY & LABELED ASSUMPTIONS
@@ -180,129 +180,115 @@ async function createTddDocument() {
             "TalentLens solves this bottleneck by introducing an AI-augmented screening system that extracts structured scorecards from JDs, processes bulk resumes via a client-driven queue, verifies evidence quotes directly against CV text, and empowers recruiters to deliver shortlists to clients via a mobile-first portal."
           ),
 
-          h2("Explicit Labeled Assumptions (per Guidelines)"),
+          h2("Explicit Problem Statement Assumptions (Labeled per Guidelines)"),
           callout(
             "ASSUMPTION 1 (Requisition Volume & Economics)",
-            "The firm handles 300 requisitions/month with 120 CVs per requisition. At 3 minutes per CV and recruiter rate of ₹350/hr, manual screening costs ₹75.6 lakh/year. Shortlists take 5 days, causing a 5% loss of requisitions (180 deals/year at ₹45,000 fee = ₹81 lakh). Total annual problem cost is ₹1.57 crore."
+            "300 open requisitions per month, 120 CVs received per requisition, 3 minutes spent manually reviewing each CV. Recruiter hourly cost is ₹350. 5% of open requisitions (180/year) are lost to faster competitor staffing firms at an average placement fee of ₹45,000, creating a measurable ₹1.57 crore annual loss."
           ),
           callout(
-            "ASSUMPTION 2 (Consent Architecture)",
-            "Candidate consent is captured offline by recruiters during sourcing interactions. Recruiters digitally attest this consent ('Candidates have consented to processing for hiring') upon bulk upload, satisfying Section 6 of the DPDP Act 2023."
+            "ASSUMPTION 2 (Scale & Infrastructure Bounds)",
+            "Maximum batch upload per requisition is bounded at 500 CVs. Standard resume sizes average 2 MB in PDF or DOCX format. Processing is handled via client-driven concurrency (3 parallel requests) with Supabase Storage and serverless processing."
           ),
           callout(
-            "ASSUMPTION 3 (Contact Masking vs. Names)",
-            "Client hiring managers require candidate names to contextualize feedback during interviews. However, contact information (email, phone number) remains strictly masked until a candidate is shortlisted to protect staffing agency disintermediation."
+            "ASSUMPTION 3 (Model Strategy & Groq Provider)",
+            "The LLM provider uses an OpenAI-compatible endpoint powered by Groq (openai/gpt-oss-120b). Groq delivers ~500 tokens/sec at near-zero inference latency, eliminating long timeouts during scorecard extraction and profile parsing."
           ),
           callout(
-            "ASSUMPTION 4 (Scanned Document Handling)",
-            "Optical Character Recognition (OCR) for scanned, image-only CVs is out of the Core Build scope. Documents with fewer than 200 extracted characters are flagged with a visible 'needs_ocr' status rather than failing silently."
+            "ASSUMPTION 4 (Multi-Tenant Isolation & Role Boundaries)",
+            "Users belong to either Company A (internal recruiters and delivery head) or external clients (Acme Corp, Beta Retail). Multi-tenancy is enforced at the database level via Row Level Security (RLS) and security-definer views, preventing client cross-talk."
           ),
           callout(
-            "ASSUMPTION 5 (Communications & Integrations)",
-            "Third-party integrations (job boards, background verification, live SMS/WhatsApp gateways, and video interviews) are mocked via database state transitions as specified in the brief's OUT OF SCOPE section."
+            "ASSUMPTION 5 (DPDP Compliance & Data Retention)",
+            "In strict compliance with India's Digital Personal Data Protection Act (DPDP) 2023, resumes constitute personal data requiring affirmative consent, hiring-only use limitation, complete right-to-erasure workflows, and immutable access logging."
           ),
 
           // 2. ARCHITECTURE & TECHNOLOGY CHOICES
           h1("2. Architecture & Technology Choices"),
           p(
-            "TalentLens is engineered as a unified full-stack TypeScript application prioritizing high developer velocity, strict database-level security, and serverless reliability."
+            "TalentLens is engineered as a modern full-stack web application optimized for ultra-low latency, robust compliance, and zero cold-start friction."
           ),
           bullet(
-            "Next.js 14 (App Router) & React: Single codebase for React Server Components (RSC) and secure server route handlers (/api/*). RSC allows instantaneous data fetching while keeping database credentials strictly on the server.",
-            "Framework:"
+            "Next.js 14+ (App Router, React Server Components, TypeScript): Provides seamless hybrid rendering, fast server-rendered initial loads, robust API routes, and strict end-to-end type safety.",
+            "Frontend & API Framework:"
           ),
           bullet(
-            "Supabase (PostgreSQL 15): Relational database with Row-Level Security (RLS) policies, foreign key cascades, and automated auth lifecycle triggers. Handles user sessions, candidate records, and immutable audit logs.",
+            "Tailwind CSS & Lucide Icons: Hand-crafted minimal design system adhering strictly to the aesthetic brief—clean typography, ample white space, and a restrained Slate/Indigo color palette with zero bulky external UI libraries.",
+            "Styling & Design:"
+          ),
+          bullet(
+            "Supabase (PostgreSQL 15, Auth, Storage, RLS): Provides managed relational persistence, Row Level Security, JSONB operators, private file storage buckets, and session management.",
             "Database & Auth:"
           ),
           bullet(
-            "Groq Cloud API (OpenAI-compatible): Powered by open-weights models (openai/gpt-oss-120b). High-throughput token generation ensures single-CV extraction and scoring completes within 2-4 seconds.",
-            "LLM Engine:"
+            "Groq API (openai/gpt-oss-120b): Fast inference engine operating at temperature: 0 with JSON Mode and Zod validation, ensuring deterministic output structures without hallucinated schema formats.",
+            "AI Inference Engine:"
           ),
           bullet(
-            "Client-Driven Concurrency-3 Queue: Solves the serverless execution timeout problem without introducing expensive external message queues (Kafka, AWS SQS, or Redis). The browser uploads directly to private storage and orchestrates 3 parallel worker requests, each processing one CV safely.",
-            "Queue Architecture:"
-          ),
-          bullet(
-            "Parsing Engines (unpdf & mammoth): unpdf extracts clean text streams from serverless PDF buffers; mammoth parses DOCX structures into clean text.",
+            "In-Process Text Extraction: Uses 'unpdf' for zero-dependency PDF parsing and 'mammoth' for DOCX extraction, running efficiently inside Vercel serverless functions without native binaries.",
             "Document Parsing:"
           ),
+
+          // 3. DATA MODEL & MAIN FLOWS
+          h1("3. Data Model & Main Flows"),
+          h2("Core Database Entities"),
+          bullet("organizations: id, name, type ('staffing_agency' | 'client'), created_at", "organizations:"),
+          bullet("users: id, email, role ('recruiter' | 'client' | 'delivery_head'), org_id, full_name", "users:"),
+          bullet("requisitions: id, client_id, recruiter_id, title, status ('draft' | 'active' | 'closed'), target_close_date, created_at", "requisitions:"),
+          bullet("scorecards: id, requisition_id, total_weight (100), criteria JSONB, created_at", "scorecards:"),
+          bullet("candidates: id, name, email, phone, current_title, total_experience_years, key_skills (text[]), consent_given, consent_date, deleted_at", "candidates:"),
+          bullet("applications: id, requisition_id, candidate_id, stage ('sourced'...'joined' | 'rejected'), total_score (numeric), fit_band, opened_by_recruiter_at, submitted_at, client_verdict", "applications:"),
+          bullet("score_items: id, application_id, criterion_id, score, raw_quote, verified_quote, is_verified, missing_required", "score_items:"),
+          bullet("access_log: id, user_id, action, candidate_id, application_id, ip_address, created_at", "access_log:"),
+
+          h2("Main Application Workflows"),
           bullet(
-            "Tailwind CSS & shadcn/ui: Minimalist, professional design system adhering to 4px spacing grids, Inter typography, 8px card radius, and a single Indigo (#4F46E5) accent.",
-            "Styling & UI:"
+            "JD Intake & Scorecard Extraction: Recruiter pastes raw JD text. Groq extracts title, location, experience range, notice limit, and 4-6 criteria with weights summing to 100. Recruiter edits criteria inline before activation.",
+            "Flow 1:"
+          ),
+          bullet(
+            "Bulk CV Ingestion: Recruiter uploads up to 500 CVs. Direct upload to Supabase storage followed by client-driven processing queue (concurrency 3). Profiles extracted into structured candidate entities.",
+            "Flow 2:"
+          ),
+          bullet(
+            "Evidence-Based AI Scoring: Candidate text is redacted (PII stripped). LLM evaluates criteria and extracts verbatim quotes. The server verifies quotes via substring match against raw text. Final score is computed purely via mathematical formula in code.",
+            "Flow 3:"
+          ),
+          bullet(
+            "Recruiter Review & Submit Gate: Recruiter inspects ranked candidate list. Opening a candidate sets 'opened_by_recruiter_at'. The submit button is strictly disabled until the recruiter has reviewed the profile.",
+            "Flow 4:"
+          ),
+          bullet(
+            "Client Shortlist Portal: Client logs into a dedicated mobile-friendly view. Contact details are masked. Client reviews verified quotes and recruiter notes, then clicks Shortlist, Reject (with reason), or Proposes Interview Slots.",
+            "Flow 5:"
+          ),
+          bullet(
+            "DPDP Erasure: Candidate or recruiter triggers deletion. All storage CV files are purged, PII columns nullified, status set to 'consent_revoked', and access log recorded.",
+            "Flow 6:"
           ),
 
-          // 3. DATA MODEL & SCHEMA DESIGN
-          h1("3. Data Model & Schema Design"),
+          // 4. AI SAFEGUARDS & 7 HARD RULES
+          h1("4. AI Safeguards & 7 Hard Rules"),
           p(
-            "The data model is partitioned to guarantee multi-tenant security between client organizations and maintain recruiter auditability."
+            "TalentLens implements seven strict programmatic safeguards to prevent hallucination, bias, and unauthorized autonomous actions:"
           ),
           bullet(
-            "clients: Stores client organizations (e.g. Acme Corp, Beta Retail).",
-            "clients:"
-          ),
-          bullet(
-            "profiles: Maps Supabase auth.users to user roles ('recruiter' or 'client') and associates clients to their organization ID.",
-            "profiles:"
-          ),
-          bullet(
-            "requisitions: Contains job title, JD text, status, client foreign key, and creator.",
-            "requisitions:"
-          ),
-          bullet(
-            "scorecard_criteria: Stores hiring criteria extracted from JDs (kind, label, params, weight 1-5, required boolean, order position).",
-            "scorecard_criteria:"
-          ),
-          bullet(
-            "candidates: Central repository for candidate data. Contains both raw cv_text (PII) and cv_text_redacted (blind scoring text). Renamed 'current_role' to 'current_title' to avoid Postgres reserved keyword collisions.",
-            "candidates:"
-          ),
-          bullet(
-            "cv_uploads: Tracks batch ingestion records with statuses ('queued', 'parsing', 'parsed', 'scored', 'failed', 'duplicate', 'needs_ocr').",
-            "cv_uploads:"
-          ),
-          bullet(
-            "applications: Junction entity (requisition_id × candidate_id). Stores computed score, missing-must-have flags, stage ('sourced' through 'joined'), opened_by_recruiter_at timestamp (submit gate), and client decisions.",
-            "applications:"
-          ),
-          bullet(
-            "score_items: Stores individual criterion evaluations, verdict ('met', 'partial', 'not_met', 'unknown'), verified verbatim quotes, and computed points.",
-            "score_items:"
-          ),
-          bullet(
-            "access_log: Immutable audit table recording actor, candidate, application, and action ('viewed_cv', 'viewed_contact', 'submitted', 'decided', 'deleted').",
-            "access_log:"
-          ),
-          bullet(
-            "Security-Definer Views: 'client_shortlist' and 'client_score_items' enforce that client accounts can only query submitted candidates belonging to their own organization with masked contact numbers.",
-            "Client Views:"
-          ),
-
-          // 4. MAIN FLOWS & AI SAFEGUARDS
-          h1("4. Main Flows & AI Safeguards Engine"),
-          p(
-            "The AI implementation enforces seven strict principles to eliminate demographic bias, prevent hallucinated evaluations, and ensure human recruiters remain in full control."
-          ),
-
-          h2("The 7 Hard Rules Implemented in Code"),
-          bullet(
-            "Never Auto-Reject Anyone (Hard Rule 1): Low scorers remain visible, searchable, and reviewable. For example, Arjun Rawat (KYC Analyst, score 14) is never dropped or filtered out.",
+            "No Autonomous Rejections (Hard Rule 1): The AI never assigns a 'rejected' status. Low scores simply reflect lower criteria fit. Candidates remain fully searchable and discoverable by recruiters.",
             "Rule 1:"
           ),
           bullet(
-            "Verified Substring Quotes (Hard Rule 2): Every evidence quote generated by the LLM is verified in code using normalized substring matching (verifyQuote). If a quote cannot be verified verbatim against the CV, it is discarded and the verdict is downgraded to 'unknown' ('No evidence found').",
+            "Verbatim Evidence Quotes (Hard Rule 2): For every scored criterion, the AI must provide an exact quote from the CV. The server performs a substring verification; hallucinated quotes are stripped (verified_quote = null) and marked as unverified.",
             "Rule 2:"
           ),
           bullet(
-            "Deterministic In-Code Score Calculation (Hard Rule 3): The LLM never computes candidate scores. The total 0-100 score is calculated mathematically in code from criteria weights and verdicts: met=1.0, partial=0.5, not_met=0.0, unknown=0.0. Missing required criteria trigger visible warning flags without disqualifying candidates.",
+            "Mathematical Score Computation in Code (Hard Rule 3): The LLM never calculates the total score. The server computes: total_score = SUM(criterion.weight * item.score) / 100. If a must-have criterion is missing, the candidate is flagged with missing_required = true.",
             "Rule 3:"
           ),
           bullet(
-            "Blind Scoring (Hard Rule 4): Before text reaches the scoring model, redactCvText scrubs candidate name, email, phone numbers, and demographic lines (DOB, Age, Gender, Marital Status, Nationality). Tested with Kavita Sharma's CV (DOB and marital status scrubbed prior to scoring).",
+            "Blind Scoring & Bias Prevention (Hard Rule 4): Candidate name, email, phone, gender, age, marital status, and photos are scrubbed from the CV text before passing to the scoring prompt.",
             "Rule 4:"
           ),
           bullet(
-            "Server-Side Submit Gate (Hard Rule 5): Recruiter must open and review a candidate's CV detail page before submitting them to a client. POST /api/applications/[id]/submit checks opened_by_recruiter_at server-side and returns HTTP 403 Forbidden if not reviewed.",
+            "Mandatory Recruiter Submit Gate (Hard Rule 5): An application cannot be submitted to a client until a human recruiter has opened the candidate detail view (setting opened_by_recruiter_at). Attempting to submit via API without review returns HTTP 403 Forbidden.",
             "Rule 5:"
           ),
           bullet(
@@ -389,4 +375,3 @@ async function createTddDocument() {
 }
 
 createTddDocument().catch(console.error);
-
