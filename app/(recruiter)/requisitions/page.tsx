@@ -83,6 +83,20 @@ export default async function RequisitionsPage() {
                 Recruiter
               </span>
             </div>
+            <div className="hidden md:flex items-center gap-2 ml-4">
+              <Link
+                href="/calibration"
+                className="text-xs text-slate-600 hover:text-indigo-600 font-medium px-2 py-1 rounded hover:bg-slate-100 transition-colors"
+              >
+                AI vs Human Calibration
+              </Link>
+              <Link
+                href="/audit-log"
+                className="text-xs text-slate-600 hover:text-indigo-600 font-medium px-2 py-1 rounded hover:bg-slate-100 transition-colors"
+              >
+                DPDP Access Log
+              </Link>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
