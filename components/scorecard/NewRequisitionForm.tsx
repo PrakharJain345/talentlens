@@ -184,7 +184,7 @@ export function NewRequisitionForm({ clients }: NewRequisitionFormProps) {
       setSaveError(result.error);
       setIsSaving(false);
     } else {
-      router.push("/requisitions");
+      router.push(`/requisitions/${result.requisitionId}`);
       router.refresh();
     }
   };

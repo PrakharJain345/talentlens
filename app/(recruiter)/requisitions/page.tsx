@@ -197,47 +197,59 @@ export default async function RequisitionsPage() {
                     return (
                       <tr
                         key={req.id}
-                        className="hover:bg-[#FAFAFA] transition-colors group"
+                        className="hover:bg-indigo-50/40 transition-colors group cursor-pointer"
                       >
                         <td className="py-3.5 px-4 font-medium text-[#0F172A]">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
-                            <span className="font-semibold text-sm group-hover:text-[#4F46E5] transition-colors">
+                          <Link
+                            href={`/requisitions/${req.id}`}
+                            className="flex items-center gap-2 group-hover:text-indigo-600 transition-colors"
+                          >
+                            <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <span className="font-semibold text-sm">
                               {req.title}
                             </span>
-                          </div>
+                          </Link>
                         </td>
                         <td className="py-3.5 px-4 text-[#334155]">
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3 h-3 text-[#64748B]" />
-                            <span>{clientName}</span>
-                          </div>
+                          <Link href={`/requisitions/${req.id}`} className="block">
+                            <div className="flex items-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-[#64748B]" />
+                              <span>{clientName}</span>
+                            </div>
+                          </Link>
                         </td>
                         <td className="py-3.5 px-3 text-center">
-                          <Badge
-                            variant={req.status === "open" ? "success" : "secondary"}
-                            className="capitalize text-[10px] font-medium"
-                          >
-                            {req.status}
-                          </Badge>
+                          <Link href={`/requisitions/${req.id}`} className="inline-block">
+                            <Badge
+                              variant={req.status === "open" ? "success" : "secondary"}
+                              className="capitalize text-[10px] font-medium"
+                            >
+                              {req.status}
+                            </Badge>
+                          </Link>
                         </td>
                         <td className="py-3.5 px-3 text-center font-medium text-[#0F172A]">
-                          <div className="inline-flex items-center gap-1 text-xs">
-                            <Users className="w-3 h-3 text-[#64748B]" />
+                          <Link href={`/requisitions/${req.id}`} className="inline-flex items-center gap-1 text-xs">
+                            <Users className="w-3.5 h-3.5 text-[#64748B]" />
                             <span>{candidateCount}</span>
-                          </div>
+                          </Link>
                         </td>
                         <td className="py-3.5 px-3 text-center font-medium text-[#0F172A]">
-                          <div className="inline-flex items-center gap-1 text-xs">
-                            <Send className="w-3 h-3 text-[#16A34A]" />
+                          <Link href={`/requisitions/${req.id}`} className="inline-flex items-center gap-1 text-xs">
+                            <Send className="w-3.5 h-3.5 text-[#16A34A]" />
                             <span>{submittedCount}</span>
-                          </div>
+                          </Link>
                         </td>
                         <td className="py-3.5 px-4 text-[#64748B]">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3 text-[#64748B]" />
-                            <span>{createdDate}</span>
-                          </div>
+                          <Link href={`/requisitions/${req.id}`} className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+                              <span>{createdDate}</span>
+                            </div>
+                            <span className="text-xs font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              Open →
+                            </span>
+                          </Link>
                         </td>
                       </tr>
                     );
