@@ -149,9 +149,27 @@ async function createTddDocument() {
                 font: "Calibri",
               }),
             ],
+            spacing: { after: 60 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Live Deployed Application URL: ",
+                bold: true,
+                color: darkTextColor,
+                size: 22,
+                font: "Calibri",
+              }),
+              new TextRun({
+                text: "https://talentlens-rose.vercel.app",
+                bold: true,
+                color: primaryColor,
+                size: 22,
+                font: "Calibri",
+              }),
+            ],
             spacing: { after: 120 },
           }),
-          p("Live Deployment: Deployed on Vercel with cloud Supabase Postgres backend."),
 
           // 1. EXECUTIVE SUMMARY & LABELED ASSUMPTIONS
           h1("1. Executive Summary & Labeled Assumptions"),
@@ -371,3 +389,4 @@ async function createTddDocument() {
 }
 
 createTddDocument().catch(console.error);
+

@@ -2,7 +2,7 @@
 
 **Problem Statement 2:** Staffing Firm's AI Resume Screening Tool & Client Shortlist Portal  
 **Project GitHub Repository:** [https://github.com/PrakharJain345/talentlens](https://github.com/PrakharJain345/talentlens)  
-**Live Deployed Application:** Available on Vercel *(see repository README for latest live deployment URL)*
+**Live Deployed Application URL:** [https://talentlens-rose.vercel.app](https://talentlens-rose.vercel.app)
 
 ---
 
@@ -113,3 +113,4 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 - LLM inference runs via Groq's high-speed inference engine using `openai/gpt-oss-120b`.
 - Configured with `temperature: 0`, JSON mode enforcement, Zod schema validation, exponential backoff on 429 rate limits, and automatic retry on malformed outputs.
 - Redacted CV text is isolated in untrusted data delimiters to prevent prompt injection.
+

@@ -2,7 +2,9 @@
 
 > **Staffing Firm AI Resume Screening Tool & Client Shortlist Portal**  
 > Problem Statement 2 (Isocode Labs Assessment)  
-> Built for **Company A**, Noida (70 recruiters, 120 staff, IT & BFSI staffing).
+> Built for **Company A**, Noida (70 recruiters, 120 staff, IT & BFSI staffing).  
+> **Live Deployed Application:** [https://talentlens-rose.vercel.app](https://talentlens-rose.vercel.app)  
+> **GitHub Repository:** [https://github.com/PrakharJain345/talentlens](https://github.com/PrakharJain345/talentlens)
 
 ---
 
